@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-import uvicorn
 from pydantic import BaseModel
 import base64
 import os
@@ -8,7 +7,9 @@ import numpy
 from starlette.responses import StreamingResponse
 import json
 from dotenv import load_dotenv
-
+from threaded_uvicorn import ThreadedUvicorn
+import uvicorn
+from utils import create_directories
 fake_users_db = {
     "johndoe": {
         "username": "johndoe",
@@ -32,10 +33,19 @@ class Attendance(BaseModel):
     # date: date
 class APIWrapper():
     def __init__(self):
-        self.host = os.getenv('HOST')
-        self.port = os.getenv('PORT')
+        host = os.getenv('HOST')
+        port = os.getenv('PORT')
         self.app = FastAPI()
-
+        config = uvicorn.Config(self.app, host=host, port=port, log_level="info")
+        self.server = uvicorn.Server(config)
+        available_directories = [
+            "material", # lecture material
+            "transcripts", # Ai based lecture transcript
+            "summaries", # Ai summerization of transcripts
+            "videos" # the recorded video
+        ]
+        create_directories(available_directories)
+        # self.instance = ThreadedUvicorn(config)
     def configure_routes(self):
         @self.app.get("/list-directory")
         async def list_directory():
@@ -72,15 +82,25 @@ class APIWrapper():
         @self.app.get("/OK")
         def health_check():
             return {"message": "alive and well","code":0}
-
-    def run(self):
+        # for testing purposes testing
+        @self.app.get("/stop")
+        def stop():
+            # self.instance.stop()
+            self.server.should_exit = True
+            print("exitting...")
+    def stop(self):
+            # self.instance.stop()
+            self.server.should_exit = True
+            print("exitting...")
+    def start(self):
         self.configure_routes()
-        uvicorn.run(self.app, host=self.host,port=self.port)
+        self.server.run()
+        
 
 if __name__ == "__main__":
     load_dotenv()
     test = APIWrapper()
-    test.run()
+    test.start()
     # if(port == None):
     #     port = 8000
     # uvicorn.run(app, host="0.0.0.0", port=int(port))

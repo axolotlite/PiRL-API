@@ -1,20 +1,15 @@
 import qrcode
 from PIL import Image
 from io import BytesIO
-import netifaces
-import json
 import os
+import json
 import numpy
 import cv2
 from dotenv import load_dotenv
+from utils import get_ip
 class QrHandler():
     def __init__(self):
         self.port = os.getenv('PORT')
-    def get_ip(self):
-        addresses = []
-        for ifaceName in netifaces.interfaces():
-            addresses.append([i['addr'] for i in netifaces.ifaddresses(ifaceName).setdefault(netifaces.AF_INET, [{'addr':'No IP addr'}])])
-        return addresses
     def generate_qrcode(self,text):
         qr = qrcode.QRCode(
             version=1,
@@ -35,7 +30,7 @@ class QrHandler():
         return bytes_io
 
     def generate_qr_endpoint(self,token="token"):
-        address = f"{self.get_ip()[-1][0]}:{self.port}/"
+        address = f"{get_ip()[-1][0]}:{self.port}/"
         json_data = {"address": address, "token": token}
         json_data = json.dumps(json_data)
         img = numpy.array(self.generate_qrcode(json_data).convert("RGB"))
