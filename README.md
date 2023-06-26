@@ -12,6 +12,9 @@ HOST=0.0.0.0
 create your own .env file and add them to it.
 
 ## running the server
+first install the requirements
+`pip install -r requirements.txt`
+then start the server
 `python pirl_api.py`
 
 ## api calls:
