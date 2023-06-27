@@ -7,7 +7,6 @@ import numpy
 from starlette.responses import StreamingResponse
 import json
 from dotenv import load_dotenv
-from threaded_uvicorn import ThreadedUvicorn
 import uvicorn
 from utils import create_directories
 from db_handler import DBHandler
