@@ -10,25 +10,12 @@ from dotenv import load_dotenv
 from threaded_uvicorn import ThreadedUvicorn
 import uvicorn
 from utils import create_directories
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "fakehashedsecret",
-        "disabled": False,
-    },
-    "alice": {
-        "username": "alice",
-        "full_name": "Alice Wonderson",
-        "email": "alice@example.com",
-        "hashed_password": "fakehashedsecret2",
-        "disabled": True,
-    },
-}
+from db_handler import DBHandler
+
 class Attendance(BaseModel):
     user: str
-    userId: str
+    userId: int
+    lessonId: int
     token: str
     # date: date
 class APIWrapper():
@@ -45,6 +32,7 @@ class APIWrapper():
             "videos" # the recorded video
         ]
         create_directories(available_directories)
+        self.db_handler = DBHandler()
         # self.instance = ThreadedUvicorn(config)
     def configure_routes(self):
         @self.app.get("/list-directory")
@@ -65,8 +53,12 @@ class APIWrapper():
         @self.app.post("/attend/")
         async def attend(attendance: Attendance):
             #attendence in db
+            exists = self.db_handler.add_student(attendance.userId,attendance.user)
+            if(exists):
+                print("userid already exists recording attendence")
+            self.db_handler.add_attendance(attendance.userId,attendance.lessonId, True)
             print(attendance)
-            return {"message": f"attendance recorded"}
+            return {"message": f"{attendance.user} attendance for {attendance.lessonId} recorded"}
 
         @self.app.get("/download")
         def download_file(directory: str, file_name: str):
