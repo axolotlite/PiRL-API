@@ -29,15 +29,16 @@ class QrHandler():
         bytes_io.seek(0)
         return bytes_io
 
-    def generate_qr_endpoint(self,token="token"):
+    def generate_qr_endpoint(self,token="token",content=None):
         address = f"{get_ip()[-1][0]}:{self.port}/"
-        json_data = {"address": address, "token": token}
+        json_data = {"address": address, "token": token, "content":content}
         json_data = json.dumps(json_data)
         img = numpy.array(self.generate_qrcode(json_data).convert("RGB"))
         return img
 
     def test_gen(self):
-        image = self.generate_qr_endpoint()
+        content={"class_id":1,"name":"archer"}
+        image = self.generate_qr_endpoint(content=content)
         cv2.imshow("test",image)
         cv2.waitKey(0)
         # closing all open windows
