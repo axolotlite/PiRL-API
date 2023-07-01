@@ -1,2 +1,2 @@
-from utils import create_directories, get_ip
-from db_handler import DBHandler
+from .utils import create_directories
+from .db_handler import DBHandler

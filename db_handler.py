@@ -28,22 +28,24 @@ class DBHandler():
             # Create the Lessons table
             '''
             CREATE TABLE IF NOT EXISTS Lessons (
-                id INTEGER PRIMARY KEY,
-                date TEXT NOT NULL,
                 class_id INTEGER,
-                FOREIGN KEY (class_id) REFERENCES Classes (id)
-            )
+                lesson_number INT NOT NULL,
+                date TEXT NOT NULL,
+                FOREIGN KEY (class_id) REFERENCES Classes (id),
+                PRIMARY KEY (class_id, lesson_number)
+            );
             ''',
             # Create the Attendance table
             '''
             CREATE TABLE IF NOT EXISTS Attendance (
                 id INTEGER PRIMARY KEY,
                 student_id INTEGER,
-                lesson_id INTEGER,
+                class_id INTEGER,
+                lesson_number INTEGER,
                 attendance_status BOOL NOT NULL,
                 FOREIGN KEY (student_id) REFERENCES Students (id),
-                FOREIGN KEY (lesson_id) REFERENCES Lessons (id)
-            )
+                FOREIGN KEY (class_id, lesson_number) REFERENCES Lessons (class_id, lesson_number)
+            );
             '''
         ]
         self.conn = self.init_db()
@@ -86,25 +88,50 @@ class DBHandler():
         """
         Add a new lesson to the Lessons table
         """
-        sql = "INSERT INTO Lessons (date, class_id) VALUES (?, ?)"
-        self.conn.execute(sql, (date, class_id))
+        sql = "SELECT COALESCE(MAX(lesson_number), 0) + 1 FROM Lessons WHERE class_id = ?"
+        cursor = self.conn.execute(sql, (class_id,))
+        lesson_number = cursor.fetchone()[0]
+        print("lesson number: ",lesson_number)
+        sql = "INSERT INTO Lessons (date, class_id, lesson_number) VALUES (?, ?, ?)"
+        self.conn.execute(sql, (date, class_id, lesson_number))
         self.conn.commit()
 
-    def add_attendance(self, student_id, lesson_id, attendance_status):
+    def add_attendance(self, student_id, class_id, lesson_number, attendance_status):
         """
         Add a new attendance record to the Attendance table
         """
-        sql = "INSERT INTO Attendance (student_id, lesson_id, attendance_status) VALUES (?, ?, ?)"
-        self.conn.execute(sql, (student_id, lesson_id, attendance_status))
+        sql = "INSERT INTO Attendance (student_id, class_id, lesson_number, attendance_status) VALUES (?, ?, ?, ?)"
+        self.conn.execute(sql, (student_id, class_id, lesson_number, attendance_status))
         self.conn.commit()
-    def get_students(self):
+    def get_students(self,class_id=None):
         """
         Return the content of the Students table as a dictionary
         """
-        sql = "SELECT * FROM Students"
+        # sql = """
+        #     SELECT DISTINCT s.id AS student_id, s.name AS student_name, l.id AS lessons_id
+        #     FROM Classes c
+        #     JOIN Lessons l ON c.id = l.class_id
+        #     JOIN Attendance a ON l.id = a.lesson_id
+        #     JOIN Students s ON a.student_id = s.id
+        # """
+        sql = f"""SELECT s.id AS student_id, s.name AS student_name, c.id as class_id, GROUP_CONCAT(a.attendance_status) AS attendance_records
+            FROM Classes c
+            JOIN Lessons l ON c.id = l.class_id
+            JOIN Attendance a ON l.class_id = a.class_id AND l.lesson_number = a.lesson_number
+            JOIN Students s ON a.student_id = s.id
+            WHERE c.id = {class_id}
+            GROUP BY s.id, s.name;
+            """
+        # if(class_id):
+        #     print(class_id)
+        #     sql+= f"\nWHERE c.id = {class_id}"
         cursor = self.conn.execute(sql)
         columns = [column[0] for column in cursor.description]
         students = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        for student in students:
+            attendance_str = student['attendance_records']
+            attendance_array = [bool(int(status)) for status in attendance_str.split(',')]
+            student['attendance_records'] = attendance_array
         return students
 
     def get_classes(self):
@@ -172,15 +199,25 @@ def test_addition(db_handler):
 
     # Add a student
     db_handler.add_student(1, "John Doe")
+    db_handler.add_student(2, "Jane Doe")
 
     # Add a class
     db_handler.add_class("Mathematics", "Math Sunday")
+    db_handler.add_class("Physics", "Physics Monday")
 
     # Add a lesson
     db_handler.add_lesson("2023-06-27", 1)
+    db_handler.add_lesson("2023-06-28", 1)
+    db_handler.add_lesson("2023-06-28", 2)
+    db_handler.add_lesson("2023-06-29", 2)
 
     # Add an attendance record
-    db_handler.add_attendance(1, 1, True)
+    db_handler.add_attendance(1, 1,1, True)
+    db_handler.add_attendance(1, 1,2, False)
+    db_handler.add_attendance(2, 1,1, False)
+    db_handler.add_attendance(2, 1,2, False)
+    db_handler.add_attendance(2, 2,1, True)
+    db_handler.add_attendance(2, 2,2, True)
 
 def test_removal(db_handler):
 
@@ -200,8 +237,14 @@ def test_removal(db_handler):
     conn.close()
 if __name__ == "__main__":
     db_handler = DBHandler()
-    print("students: \n", db_handler.get_students())
-    print("lessons: \n" , db_handler.get_lessons())
-    print("classes: \n" , db_handler.get_classes())
-    print("attendance: \n" , db_handler.get_attendance())
+    # print("students: \n", db_handler.get_students())
+    # print("lessons: \n" , db_handler.get_lessons())
+    # print("classes: \n" , db_handler.get_classes())
+    # print("attendance: \n" , db_handler.get_attendance())
+
+    # db_handler.add_attendance(2, 1, True)
     # test_addition(db_handler)
+    # db_handler.add_lesson("today",1)
+    # print(db_handler.get_classes())
+    for item in db_handler.get_students(2):
+        print(item)
