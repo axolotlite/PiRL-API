@@ -18,6 +18,7 @@ class Attendance(BaseModel):
     userId: int
     lessonId: int
     token: str
+    classId: int
     # date: date
 class APIWrapper():
     def __init__(self):
@@ -67,6 +68,8 @@ class APIWrapper():
             print(list(map(lambda file: file, files)))
             return list(map(lambda file: file, files))
         
+        
+
         @self.app.get("/list-directory/summaries")
         async def list_directory():
             files = []
@@ -114,12 +117,22 @@ class APIWrapper():
         async def attend(attendance: Attendance):
             #attendence in db
             exists = self.db_handler.add_student(attendance.userId,attendance.user)
+            recorded_before = self.db_handler.check_exist(attendance.userId, attendance.classId)
             if(exists):
                 print("userid already exists recording attendence")
-            self.db_handler.add_attendance(attendance.userId,attendance.lessonId, True)
+            print("recorded_before: ",recorded_before)
+            if(not recorded_before):
+                print("adding new dummy records")
+                lesson_count = self.db_handler.get_last_lesson(attendance.classId) + 1
+                for idx in range(1,lesson_count):
+                    print(f"record[{idx}] added")
+                    self.db_handler.add_attendance(attendance.userId, attendance.classId,idx, False)
+
+
+            self.db_handler.set_attendance(attendance.userId, attendance.classId,attendance.lessonId, True)
             print(attendance)
             return {"message": f"{attendance.user} attendance for {attendance.lessonId} recorded"}
-
+        
         # @self.app.get("/download")
         # def download_file(directory: str, file_name: str):
         #     file_path = "./data/" + directory + '/' + file_name
