@@ -10,9 +10,9 @@ from starlette.responses import StreamingResponse
 import json
 from dotenv import load_dotenv
 import uvicorn
-from utils import create_directories
-from db_handler import DBHandler
-
+from .utils import create_directories
+from .db_handler import DBHandler
+import threading
 class Attendance(BaseModel):
     user: str
     userId: int
@@ -22,11 +22,13 @@ class Attendance(BaseModel):
     # date: date
 class APIWrapper():
     def __init__(self):
+        load_dotenv()
         host = os.getenv('HOST')
         port = os.getenv('PORT')
         self.app = FastAPI()
         config = uvicorn.Config(self.app, host=host, port=port, log_level="info")
         self.server = uvicorn.Server(config)
+        self.thread = threading.Thread(target=self.server.run)
         available_directories = [
             "material", # lecture material
             "transcripts", # Ai based lecture transcript
@@ -35,6 +37,7 @@ class APIWrapper():
         ]
         create_directories(available_directories)
         self.db_handler = DBHandler()
+        
         # self.instance = ThreadedUvicorn(config)
     def configure_routes(self):
     #     @self.app.get("/list-directory")
@@ -203,7 +206,8 @@ class APIWrapper():
             print("exitting...")
     def start(self):
         self.configure_routes()
-        self.server.run()
+        # self.server.run()
+        self.thread.start()
         
 
 if __name__ == "__main__":

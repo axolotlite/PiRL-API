@@ -6,10 +6,11 @@ import json
 import numpy
 import cv2
 from dotenv import load_dotenv
-from utils import get_ip
+from .utils import get_ip
 class QrHandler():
     def __init__(self):
         self.port = os.getenv('PORT')
+    @classmethod
     def generate_qrcode(self,text):
         qr = qrcode.QRCode(
             version=1,
@@ -28,9 +29,10 @@ class QrHandler():
         img.save(bytes_io, format="PNG")
         bytes_io.seek(0)
         return bytes_io
-
+    @classmethod
     def generate_qr_endpoint(self,prefix,classId,className,lessonId,token="token"):
-        address = f"{get_ip(prefix)}:{self.port}"
+        port = os.getenv('PORT')
+        address = f"{get_ip(prefix)}:{port}"
         json_data = {"address": address, "token": token,"classId":classId, "className": className,"lessonId":lessonId}
         json_data = json.dumps(json_data)
         img = numpy.array(self.generate_qrcode(json_data).convert("RGB"))
