@@ -100,9 +100,27 @@ class DBHandler():
         """
         Add a new attendance record to the Attendance table
         """
+        if(lesson_number == -1):
+            lesson_number = self.get_last_lesson(class_id)
+
         sql = "INSERT INTO Attendance (student_id, class_id, lesson_number, attendance_status) VALUES (?, ?, ?, ?)"
         self.conn.execute(sql, (student_id, class_id, lesson_number, attendance_status))
         self.conn.commit()
+    def set_attendance(self, student_id, class_id, lesson_number, attendance_status):
+        print(
+                student_id,
+                class_id,
+                lesson_number, 
+                attendance_status
+            )
+        sql = f"""
+            UPDATE Attendance
+            SET attendance_status = {attendance_status}
+            WHERE student_id = {student_id} AND class_id = {class_id} AND lesson_number = {lesson_number};
+        """
+        self.conn.execute(sql)
+        self.conn.commit()
+    
     def get_students(self,class_id=None):
         """
         Return the content of the Students table as a dictionary
@@ -144,16 +162,31 @@ class DBHandler():
         classes = [dict(zip(columns, row)) for row in cursor.fetchall()]
         return classes
 
-    def get_lessons(self):
+    def get_lessons(self,class_id):
         """
         Return the content of the Lessons table as a dictionary
         """
-        sql = "SELECT * FROM Lessons"
+        sql = f"""
+            SELECT lesson_number, date
+            FROM Lessons
+            WHERE class_id = {class_id};
+        """
         cursor = self.conn.execute(sql)
         columns = [column[0] for column in cursor.description]
         lessons = [dict(zip(columns, row)) for row in cursor.fetchall()]
         return lessons
-
+    def get_last_lesson(self,class_id):
+        """
+        Return the last lesson number
+        """
+        sql = f"""
+            SELECT MAX(lesson_number) AS last_lesson_number
+            FROM Lessons
+            WHERE class_id = {class_id};
+        """
+        cursor = self.conn.execute(sql)
+        lesson_number = cursor.fetchall()[0][0]
+        return lesson_number
     def get_attendance(self):
         """
         Return the content of the Attendance table as a dictionary
@@ -195,6 +228,15 @@ class DBHandler():
         sql = "DELETE FROM Attendance WHERE id = ?"
         self.conn.execute(sql, (attendance_id,))
         self.conn.commit()
+    def check_exist(self, student_id, class_id):
+        sql = f"""
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END AS has_attendance
+        FROM Attendance
+        WHERE student_id = {student_id} AND class_id = {class_id};
+        """
+        cursor = self.conn.execute(sql)
+        exist = cursor.fetchall()[0][0]
+        return exist
 def test_addition(db_handler):
 
     # Add a student
@@ -208,14 +250,20 @@ def test_addition(db_handler):
     # Add a lesson
     db_handler.add_lesson("2023-06-27", 1)
     db_handler.add_lesson("2023-06-28", 1)
+    db_handler.add_lesson("2023-06-29", 1)
+    db_handler.add_lesson("2023-06-30", 1)
     db_handler.add_lesson("2023-06-28", 2)
     db_handler.add_lesson("2023-06-29", 2)
 
     # Add an attendance record
     db_handler.add_attendance(1, 1,1, True)
     db_handler.add_attendance(1, 1,2, False)
+    db_handler.add_attendance(1, 1,3, True)
+    db_handler.add_attendance(1, 1,4, True)
     db_handler.add_attendance(2, 1,1, False)
     db_handler.add_attendance(2, 1,2, False)
+    db_handler.add_attendance(2, 1,3, True)
+    # db_handler.add_attendance(2, 1,2, False)
     db_handler.add_attendance(2, 2,1, True)
     db_handler.add_attendance(2, 2,2, True)
 
@@ -243,8 +291,12 @@ if __name__ == "__main__":
     # print("attendance: \n" , db_handler.get_attendance())
 
     # db_handler.add_attendance(2, 1, True)
-    # test_addition(db_handler)
+    test_addition(db_handler)
     # db_handler.add_lesson("today",1)
     # print(db_handler.get_classes())
+    # db_handler.set_attendance(2,2,3, False)
     for item in db_handler.get_students(2):
         print(item)
+    # for item in db_handler.get_lessons(1):
+    #     print(item)
+    # print(db_handler.get_last_lesson(1))
