@@ -54,7 +54,7 @@ class DBHandler():
 
     def init_db(self):
         # Connect to the database or create a new one
-        conn = sqlite3.connect(self.db_location)
+        conn = sqlite3.connect(self.db_location,check_same_thread=False)
         for query in self.db_creation_queries:
             conn.execute(query)
         # Commit the changes and return the connection

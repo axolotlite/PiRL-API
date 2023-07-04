@@ -33,7 +33,7 @@ class QrHandler():
     def generate_qr_endpoint(self,prefix,classId,className,lessonId,token="token"):
         port = os.getenv('PORT')
         address = f"{get_ip(prefix)}:{port}"
-        json_data = {"address": address, "token": token,"classId":classId, "className": className,"lessonId":lessonId}
+        json_data = {"address": address, "token": token,"classId":classId, "className": className,"lessonId":str(lessonId)}
         json_data = json.dumps(json_data)
         img = numpy.array(self.generate_qrcode(json_data).convert("RGB"))
         return img
