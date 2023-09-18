@@ -28,7 +28,7 @@ class QrHandler():
         img.save(bytes_io, format="PNG")
         bytes_io.seek(0)
         return bytes_io
-
+    @classmethod
     def generate_qr_endpoint(self,prefix,className,lessonId,token="token"):
         address = f"{get_ip(prefix)}:{self.port}"
         json_data = {"address": address, "token": token, "className": className,"lessonId":lessonId}
