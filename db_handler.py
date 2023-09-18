@@ -1,5 +1,7 @@
-import sqlite3
-
+# import sqlite3
+import psycopg2
+import os
+# from dotenv import load_dotenv
 class DBHandler():
     _instance = None
     #ensuring that the db object is singleton
@@ -8,7 +10,14 @@ class DBHandler():
             cls._instance = super(DBHandler, cls).__new__(cls, *args, **kwargs)
         return cls._instance
     def __init__(self, db_location="data/attendance.db"):
+        database = os.getenv('POSTGRES_DB')
+        host = os.getenv('POSTGRES_HOST')
+        user = os.getenv('POSTGRES_USER')
+        password = os.getenv('POSTGRES_PASSWORD')
+        port = os.getenv('POSTGRES_PORT')
+        # load_dotenv()
         self.db_location = db_location
+
         self.db_creation_queries = [
             # Create the Students table
             '''
@@ -48,13 +57,18 @@ class DBHandler():
             );
             '''
         ]
-        self.conn = self.init_db()
+        self.conn = self.init_db(database, host, user, password, port)
     def close(self):
         self.conn.close()
 
-    def init_db(self):
+    def init_db(self,database, host, user, password, port):
         # Connect to the database or create a new one
-        conn = sqlite3.connect(self.db_location)
+        # conn = sqlite3.connect(self.db_location)
+        conn = psycopg2.connect(database=database,
+                        host=host,
+                        user=user,
+                        password=password,
+                        port=port)
         for query in self.db_creation_queries:
             conn.execute(query)
         # Commit the changes and return the connection
