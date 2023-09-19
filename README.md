@@ -46,8 +46,10 @@ upon successful registery it should push the object into a database to record st
 '/download'
 a get request that allows you to download an object from inside the data directory.
 takes two parameters, the directory and the file contained inside it.
+
 '/uploadfile/'
 a post request that allows you to upload a file and specify the location on which to save it.
 takes two parameters, a directory inside data and the file uploaded.
+
 '/OK'
 a simple get request that serves a health check
