@@ -69,8 +69,9 @@ class DBHandler():
                         user=user,
                         password=password,
                         port=port)
+        cur = conn.cursor()
         for query in self.db_creation_queries:
-            conn.execute(query)
+            cur.execute(query)
         # Commit the changes and return the connection
         conn.commit()
         return conn
@@ -82,7 +83,7 @@ class DBHandler():
         """
         try:
             sql = "INSERT INTO Students (id, name) VALUES (?, ?)"
-            self.conn.execute(sql, (student_id, name))
+            self.cur.execute(sql, (student_id, name))
             self.conn.commit()
             print("Student added successfully.")
             return True
@@ -95,7 +96,7 @@ class DBHandler():
         Add a new class to the Classes table
         """
         sql = "INSERT INTO Classes (subject, name) VALUES (?, ?)"
-        self.conn.execute(sql, (subject, name))
+        self.cur.execute(sql, (subject, name))
         self.conn.commit()
 
     def add_lesson(self, date, class_id):
@@ -103,11 +104,11 @@ class DBHandler():
         Add a new lesson to the Lessons table
         """
         sql = "SELECT COALESCE(MAX(lesson_number), 0) + 1 FROM Lessons WHERE class_id = ?"
-        cursor = self.conn.execute(sql, (class_id,))
+        cursor = self.cur.execute(sql, (class_id,))
         lesson_number = cursor.fetchone()[0]
         print("lesson number: ",lesson_number)
         sql = "INSERT INTO Lessons (date, class_id, lesson_number) VALUES (?, ?, ?)"
-        self.conn.execute(sql, (date, class_id, lesson_number))
+        self.cur.execute(sql, (date, class_id, lesson_number))
         self.conn.commit()
 
     def add_attendance(self, student_id, class_id, lesson_number, attendance_status):
@@ -115,7 +116,7 @@ class DBHandler():
         Add a new attendance record to the Attendance table
         """
         sql = "INSERT INTO Attendance (student_id, class_id, lesson_number, attendance_status) VALUES (?, ?, ?, ?)"
-        self.conn.execute(sql, (student_id, class_id, lesson_number, attendance_status))
+        self.cur.execute(sql, (student_id, class_id, lesson_number, attendance_status))
         self.conn.commit()
     def get_students(self,class_id=None):
         """
@@ -139,7 +140,7 @@ class DBHandler():
         # if(class_id):
         #     print(class_id)
         #     sql+= f"\nWHERE c.id = {class_id}"
-        cursor = self.conn.execute(sql)
+        cursor = self.cur.execute(sql)
         columns = [column[0] for column in cursor.description]
         students = [dict(zip(columns, row)) for row in cursor.fetchall()]
         for student in students:
@@ -153,7 +154,7 @@ class DBHandler():
         Return the content of the Classes table as a dictionary
         """
         sql = "SELECT * FROM Classes"
-        cursor = self.conn.execute(sql)
+        cursor = self.cur.execute(sql)
         columns = [column[0] for column in cursor.description]
         classes = [dict(zip(columns, row)) for row in cursor.fetchall()]
         return classes
@@ -163,7 +164,7 @@ class DBHandler():
         Return the content of the Lessons table as a dictionary
         """
         sql = "SELECT * FROM Lessons"
-        cursor = self.conn.execute(sql)
+        cursor = self.cur.execute(sql)
         columns = [column[0] for column in cursor.description]
         lessons = [dict(zip(columns, row)) for row in cursor.fetchall()]
         return lessons
@@ -173,7 +174,7 @@ class DBHandler():
         Return the content of the Attendance table as a dictionary
         """
         sql = "SELECT * FROM Attendance"
-        cursor = self.conn.execute(sql)
+        cursor = self.cur.execute(sql)
         columns = [column[0] for column in cursor.description]
         attendance = [dict(zip(columns, row)) for row in cursor.fetchall()]
         return attendance
@@ -183,7 +184,7 @@ class DBHandler():
         Remove a student from the Students table
         """
         sql = "DELETE FROM Students WHERE id = ?"
-        self.conn.execute(sql, (student_id,))
+        self.cur.execute(sql, (student_id,))
         self.conn.commit()
 
     def remove_class(self, class_id):
@@ -191,7 +192,7 @@ class DBHandler():
         Remove a class from the Classes table
         """
         sql = "DELETE FROM Classes WHERE id = ?"
-        self.conn.execute(sql, (class_id,))
+        self.cur.execute(sql, (class_id,))
         self.conn.commit()
 
     def remove_lesson(self, lesson_id):
@@ -199,7 +200,7 @@ class DBHandler():
         Remove a lesson from the Lessons table
         """
         sql = "DELETE FROM Lessons WHERE id = ?"
-        self.conn.execute(sql, (lesson_id,))
+        self.cur.execute(sql, (lesson_id,))
         self.conn.commit()
 
     def remove_attendance(self, attendance_id):
@@ -207,7 +208,7 @@ class DBHandler():
         Remove an attendance record from the Attendance table
         """
         sql = "DELETE FROM Attendance WHERE id = ?"
-        self.conn.execute(sql, (attendance_id,))
+        self.cur.execute(sql, (attendance_id,))
         self.conn.commit()
 def test_addition(db_handler):
 
