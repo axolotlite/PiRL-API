@@ -1,0 +1,27 @@
+version: "3"
+services:
+  app:
+    image: localhost/pirl_api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - class_material:/app/data
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:alpine
+    env_file:
+      - .env
+    expose:
+      - ${POSTGRES_PORT}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+  class_material:
