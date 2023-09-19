@@ -1,13 +1,17 @@
 # PiRL API
 a simple api server for PIRL, designed for use with it's companion mobile app.
+this is a containerized version that uses postgres as a db backend.
 
 ## environmental variables
-currently there are only 2 env variables
-HOST, PORT
 example:
 ```
 PORT=8000
 HOST=0.0.0.0
+POSTGRES_DB=attendance_record
+POSTGRES_HOST=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_PORT=5432
 ```
 create your own .env file and add them to it.
 
@@ -42,6 +46,8 @@ upon successful registery it should push the object into a database to record st
 '/download'
 a get request that allows you to download an object from inside the data directory.
 takes two parameters, the directory and the file contained inside it.
-
+'/uploadfile/'
+a post request that allows you to upload a file and specify the location on which to save it.
+takes two parameters, a directory inside data and the file uploaded.
 '/OK'
 a simple get request that serves a health check

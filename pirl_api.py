@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,File, UploadFile,Form
 from pydantic import BaseModel
 import base64
 import os
@@ -69,7 +69,14 @@ class APIWrapper():
                 with open(file_path, "rb") as file:
                     yield from file
             return StreamingResponse(content=file_generator(), media_type="application/pdf")
-
+        @self.app.post("/uploadfile/")
+        async def create_upload_file(file: UploadFile = File(...), location: str = Form(...)):
+            print(f"filetype: {location},filename:{file}")
+            contents = await file.read()
+            filename = f'{location}/{file.filename}'
+            with open(filename, 'wb') as f:
+                f.write(contents)
+            return {"filename": file.filename}
         @self.app.get("/OK")
         def health_check():
             return {"message": "alive and well","code":0}
